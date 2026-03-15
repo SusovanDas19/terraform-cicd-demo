@@ -1,0 +1,17 @@
+# Terraform provider plugins
+.terraform/
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform plan files
+tfplan
+tfplan.json
+
+# Terraform lock file (optional)
+.terraform.lock.hcl
+
+# Environment variable files
+*.tfvars
+*.tfvars.json
