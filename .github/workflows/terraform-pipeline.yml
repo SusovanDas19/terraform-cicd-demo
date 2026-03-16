@@ -47,7 +47,7 @@ jobs:
           sudo mv conftest /usr/local/bin
 
       - name: Policy Check
-        run: conftest test tfplan.json  --policy ../policy
+        run: conftest test tfplan.json --policy ../policy
 
       - name: Terraform Apply
         if: success()
