@@ -39,21 +39,6 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan -input=false
 
-      - name: Convert Plan to JSON (robust)
-        run: |
-          set -euo pipefail
-          terraform show -json tfplan > raw_tfplan.json
-
-          # remove any non-JSON lines before the first "{"
-          awk 'BEGIN{p=0} { if (p==0 && match($0,/^\s*{/)) p=1; if(p) print }' raw_tfplan.json > tfplan.json
-
-          # validate JSON
-          if ! jq -e . tfplan.json >/dev/null 2>&1; then
-            echo "ERROR: tfplan.json is not valid JSON"
-            head -n 50 raw_tfplan.json
-            exit 1
-          fi
-
       - name: Install Conftest
         run: |
           VERSION=0.45.0
@@ -62,7 +47,7 @@ jobs:
           sudo mv conftest /usr/local/bin
 
       - name: Policy Check
-        run: conftest test tfplan.json --policy ../policy
+        run: conftest test ../terraform  --policy ../policy
 
       - name: Terraform Apply
         if: success()
