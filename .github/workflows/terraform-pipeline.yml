@@ -2,20 +2,23 @@ name: Terraform CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
+
     permissions:
       id-token: write
       contents: read
+
     defaults:
       run:
         working-directory: terraform
 
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
@@ -33,17 +36,21 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
-      - name: Terraform Plan (save)
+      - name: Terraform Plan
         run: terraform plan -out=tfplan -input=false
 
-      - name: Convert Plan to JSON (fail if not valid)
+      - name: Convert Plan to JSON (robust)
         run: |
           set -euo pipefail
-          terraform show -json tfplan > tfplan.json
-          # quick check that it's valid JSON
+          terraform show -json tfplan > raw_tfplan.json
+
+          # remove any non-JSON lines before the first "{"
+          awk 'BEGIN{p=0} { if (p==0 && match($0,/^\s*{/)) p=1; if(p) print }' raw_tfplan.json > tfplan.json
+
+          # validate JSON
           if ! jq -e . tfplan.json >/dev/null 2>&1; then
-            echo "ERROR: tfplan.json is not valid JSON. Dumping head:"
-            head -n 50 tfplan.json || true
+            echo "ERROR: tfplan.json is not valid JSON"
+            head -n 50 raw_tfplan.json
             exit 1
           fi
 
@@ -57,6 +64,6 @@ jobs:
       - name: Policy Check
         run: conftest test tfplan.json --policy ../policy
 
-      - name: Terraform Apply (use plan file)
+      - name: Terraform Apply
         if: success()
         run: terraform apply -auto-approve tfplan
