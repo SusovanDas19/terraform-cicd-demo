@@ -8,7 +8,6 @@ on:
 jobs:
 
   terraform:
-
     runs-on: ubuntu-latest
 
     permissions:
@@ -27,8 +26,8 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
-          role-to-assume: arn:aws:iam::975050243542:role/ec2-adminaccess
-          aws-region: us-east-2
+          role-to-assume: arn:aws:iam::509399639169:role/ec2-adminaccess
+          aws-region: ap-south-1
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
@@ -40,7 +39,10 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -out=tfplan
+
+      - name: Convert Plan to JSON
+        run: terraform show -json tfplan > tfplan.json
 
       - name: Install Conftest
         run: |
@@ -50,7 +52,7 @@ jobs:
           sudo mv conftest /usr/local/bin
 
       - name: Policy Check
-        run: conftest test ../terraform --policy ../policy
+        run: conftest test tfplan.json --policy ../policy
 
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -auto-approve tfplan
