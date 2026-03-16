@@ -22,13 +22,13 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v3
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::509399639169:role/ec2-adminaccess
           aws-region: ap-south-1
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
+        uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
         run: terraform init
@@ -39,9 +39,12 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -out=tfplan -input=false
 
+      - name: Terraform Plan JSON
+        run: terraform show -json tfplan > tfplan.json
+
       - name: Install Conftest
         run: |
-          VERSION=0.45.0
+          VERSION=0.60.0
           wget -q https://github.com/open-policy-agent/conftest/releases/download/v${VERSION}/conftest_${VERSION}_Linux_x86_64.tar.gz
           tar xzf conftest_${VERSION}_Linux_x86_64.tar.gz
           sudo mv conftest /usr/local/bin
@@ -52,3 +55,4 @@ jobs:
       - name: Terraform Apply
         if: success()
         run: terraform apply -auto-approve tfplan
+
